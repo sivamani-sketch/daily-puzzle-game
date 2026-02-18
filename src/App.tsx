@@ -1,26 +1,29 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { generatePuzzle, validateAnswer } from "./puzzles/engine";
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { generatePuzzle, validateAnswer } from './puzzles/engine';
 import {
   updateStreak,
   getStreak,
   hasPlayedToday,
   markPlayedToday,
-} from "./streak";
-import { markProgress, getProgress } from "./progress";
+} from './streak';
+import { markProgress, getProgress } from './progress';
+
+// 🔥 STEP 2.2 — Lazy Load Heatmap
+const Heatmap = React.lazy(() => import('./Heatmap'));
 
 function App() {
-  const puzzle = generatePuzzle();
+  const puzzle = useMemo(() => generatePuzzle(), []);
 
   // STATES
-  const [answer, setAnswer] = useState("");
-  const [result, setResult] = useState("");
+  const [answer, setAnswer] = useState('');
+  const [result, setResult] = useState('');
   const [streak, setStreak] = useState(0);
   const [time, setTime] = useState(0);
   const [score, setScore] = useState(0);
 
   const [hintUsed, setHintUsed] = useState(false);
-  const [hintText, setHintText] = useState("");
+  const [hintText, setHintText] = useState('');
   const [hintPenalty, setHintPenalty] = useState(0);
 
   const [progress, setProgress] = useState<string[]>([]);
@@ -55,12 +58,12 @@ function App() {
   // Submit
   const handleSubmit = () => {
     if (hasPlayedToday()) {
-      setResult("You already solved today’s puzzle 🔒");
+      setResult('You already solved today’s puzzle 🔒');
       return;
     }
 
     const correct = validateAnswer(puzzle, answer);
-    setResult(correct ? "Correct ✅" : "Wrong ❌");
+    setResult(correct ? 'Correct ✅' : 'Wrong ❌');
 
     if (correct) {
       const finalScore = Math.max(100 - time - hintPenalty, 10);
@@ -78,58 +81,26 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white space-y-4">
+      {/* 🔥 STEP 2.3 — Lazy Loaded Heatmap */}
+      <Suspense fallback={<div>Loading heatmap...</div>}>
+        <Heatmap progress={progress} />
+      </Suspense>
 
-      {/* Heatmap */}
-      <div className="flex gap-1">
-        {Array.from({ length: 7 }).map((_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
+      <p className="text-yellow-400 text-lg">🔥 Streak: {streak}</p>
+      <p className="text-green-400">⏱ Time: {time}s</p>
+      <p className="text-purple-400">⭐ Score: {score}</p>
 
-          const played = progress.includes(date.toDateString());
-
-          return (
-            <div
-              key={i}
-              className={`w-4 h-4 rounded ${
-                played ? "bg-green-500" : "bg-gray-600"
-              }`}
-            />
-          );
-        })}
-      </div>
-
-      {/* Streak */}
-      <p className="text-yellow-400 text-lg">
-        🔥 Streak: {streak}
-      </p>
-
-      {/* Timer */}
-      <p className="text-green-400">
-        ⏱ Time: {time}s
-      </p>
-
-      {/* Score */}
-      <p className="text-purple-400">
-        ⭐ Score: {score}
-      </p>
-
-      {/* Animated Puzzle Section */}
       <motion.div
         className="text-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <p className="text-sm uppercase text-blue-400">
-          {puzzle.type}
-        </p>
+        <p className="text-sm uppercase text-blue-400">{puzzle.type}</p>
 
-        <h1 className="text-2xl mt-2">
-          {puzzle.question}
-        </h1>
+        <h1 className="text-2xl mt-2">{puzzle.question}</h1>
       </motion.div>
 
-      {/* Input */}
       <input
         className="px-4 py-2 text-black rounded"
         value={answer}
@@ -137,7 +108,6 @@ function App() {
         placeholder="Enter answer"
       />
 
-      {/* Animated Submit Button */}
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
@@ -147,18 +117,11 @@ function App() {
         Submit
       </motion.button>
 
-      {/* Hint Button */}
-      <button
-        onClick={handleHint}
-        className="px-4 py-2 bg-orange-500 rounded"
-      >
+      <button onClick={handleHint} className="px-4 py-2 bg-orange-500 rounded">
         Get Hint (-10 pts)
       </button>
 
-      {/* Hint Text */}
       <p className="text-orange-300">{hintText}</p>
-
-      {/* Result */}
       <p className="text-xl">{result}</p>
     </div>
   );

@@ -3,15 +3,15 @@ export interface StreakData {
   lastPlayed: string;
 }
 
-const STORAGE_KEY = "daily_streak";
-const PLAYED_KEY = "played_today";
+const STORAGE_KEY = 'daily_streak';
+const PLAYED_KEY = 'played_today';
 
 // Get streak from localStorage
 export const getStreak = (): StreakData => {
   const data = localStorage.getItem(STORAGE_KEY);
 
   if (!data) {
-    return { streak: 0, lastPlayed: "" };
+    return { streak: 0, lastPlayed: '' };
   }
 
   return JSON.parse(data);
